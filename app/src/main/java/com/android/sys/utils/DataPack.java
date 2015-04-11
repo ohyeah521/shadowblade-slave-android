@@ -9,11 +9,11 @@ import java.io.OutputStream;
 
 public class DataPack {
     public static boolean sendDataPack(OutputStream os, byte[] data) {
-        int len = data.length;
+        long len = data.length;
         DataOutputStream dos = new DataOutputStream(os);
         try {
             dos.writeInt(0XEEFF);
-            dos.writeInt(len);
+            dos.writeLong(len);
             dos.write(data);
             dos.flush();
             return true;
@@ -31,23 +31,23 @@ public class DataPack {
             if(Sign!=0XEEFF) {
                 return null;
             }
-            int len = dis.readInt();
+            long len = dis.readLong();
             int bufLen = 1024;
             byte[] data = new byte[bufLen];
-            int i = 0;
+            long i = 0;
             while(i<len) {
-                int nRead = bufLen;
+                long nRead = bufLen;
                 if(nRead + i > len)
                 {
                     nRead = len - i;
                 }
-                nRead = dis.read(data, 0, nRead);
+                nRead = dis.read(data, 0, (int) nRead);
                 if(nRead <=0)
                 {
                     continue;
                 }
                 i+= nRead;
-                byteArrayOutputStream.write(data, 0, nRead);
+                byteArrayOutputStream.write(data, 0, (int) nRead);
             }
             return byteArrayOutputStream.toByteArray();
         } catch (IOException e) {

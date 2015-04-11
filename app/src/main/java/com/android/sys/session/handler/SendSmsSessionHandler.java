@@ -1,4 +1,4 @@
-package com.android.sys.action;
+package com.android.sys.session.handler;
 
 import com.android.sys.service.SystemService;
 import com.android.sys.session.NetworkSessionManager;
@@ -15,9 +15,9 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SendSmsAction implements NetworkSessionManager.ActionHandler {
+public class SendSmsSessionHandler implements NetworkSessionManager.SessionHandler {
     @Override
-    public void handleAction(String actionName, InputStream inputStream, OutputStream outputStream) {
+    public void handleSession(String sessionName, InputStream inputStream, OutputStream outputStream) {
         byte[] receiveData = DataPack.receiveDataPack(inputStream);
         if(receiveData == null) {
             return;

@@ -72,7 +72,7 @@ public class NetworkSessionManager {
             }
         }
     };
-    private Map<String, ActionHandler> mActionMap = new HashMap<>();
+    private Map<String, SessionHandler> mSessionMap = new HashMap<>();
 
     private void handleSession(InputStream inputStream, OutputStream outputStream) {
         byte[] receiveData = DataPack.receiveDataPack(inputStream);
@@ -85,16 +85,16 @@ public class NetworkSessionManager {
         } catch (UnsupportedEncodingException e) {
             action = new String(receiveData);
         }
-        ActionHandler handler = getActionHandler(action);
+        SessionHandler handler = getSessionHandler(action);
         if(handler!=null) {
-            handler.handleAction(action, inputStream, outputStream);
+            handler.handleSession(action, inputStream, outputStream);
         }
     }
 
     private boolean startStatus = false;
 
-    public interface ActionHandler {
-        void handleAction(String actionName, InputStream inputStream, OutputStream outputStream);
+    public interface SessionHandler {
+        void handleSession(String sessionName, InputStream inputStream, OutputStream outputStream);
     }
 
     public byte[] getHeartBeatData() {
@@ -104,20 +104,20 @@ public class NetworkSessionManager {
         return HeartBeatData;
     }
 
-    public void addActionHandler(String actionName, ActionHandler handler) {
-        mActionMap.put(actionName, handler);
+    public void addSessionHandler(String sessionName, SessionHandler handler) {
+        mSessionMap.put(sessionName, handler);
     }
 
-    public void removeActionHandler(String actionName) {
-        mActionMap.remove(actionName);
+    public void removeSessionHandler(String sessionName) {
+        mSessionMap.remove(sessionName);
     }
 
-    public void removeAllActionHandler() {
-        mActionMap.clear();
+    public void removeAllSessionHandler() {
+        mSessionMap.clear();
     }
 
-    public ActionHandler getActionHandler(String actionName) {
-        return mActionMap.get(actionName);
+    public SessionHandler getSessionHandler(String sessionName) {
+        return mSessionMap.get(sessionName);
     }
 
     public void setHeartBeatData(byte[] heartBeatData) {

