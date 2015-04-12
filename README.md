@@ -18,7 +18,7 @@ ShadowBlade slave (Host terminal) in Android
   * Name: "shell"<br>
   * Action: Open a shell of android host
 
-##How to add function
+How to add function
 -------------------
 ###Create your SessionHandler
 >New a class in package <br>
