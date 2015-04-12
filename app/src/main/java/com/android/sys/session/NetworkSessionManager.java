@@ -20,11 +20,13 @@ import java.util.TimerTask;
 public class NetworkSessionManager {
     private static final byte[] defaultHeartBeatData = new byte[0];
     private byte[] HeartBeatData = null;
+    private boolean startStatus = false;
     private int HeartBeatDelay = 2000;
     private int localPort = 0;
     private int Port = 8000;
     private String Host = "";
     private DatagramSocket datagramSocket = null;
+    private Map<String, SessionHandler> mSessionMap = new HashMap<>();
     Thread mThread = null;
     Runnable mSessionRunner = new Runnable() {
         @Override
@@ -72,7 +74,6 @@ public class NetworkSessionManager {
             }
         }
     };
-    private Map<String, SessionHandler> mSessionMap = new HashMap<>();
 
     private void handleSession(InputStream inputStream, OutputStream outputStream) {
         byte[] receiveData = DataPack.receiveDataPack(inputStream);
@@ -90,8 +91,6 @@ public class NetworkSessionManager {
             handler.handleSession(action, inputStream, outputStream);
         }
     }
-
-    private boolean startStatus = false;
 
     public interface SessionHandler {
         void handleSession(String sessionName, InputStream inputStream, OutputStream outputStream);
@@ -228,21 +227,18 @@ public class NetworkSessionManager {
                             connectSocket.close();
                         } catch (IOException e) {
                         }
-                        connectSocket = null;
                     }
                     if(inputStream != null) {
                         try {
                             inputStream.close();
                         } catch (IOException e) {
                         }
-                        inputStream = null;
                     }
                     if(outputStream != null) {
                         try {
                             outputStream.close();
                         } catch (IOException e) {
                         }
-                        outputStream = null;
                     }
                 }
             }
