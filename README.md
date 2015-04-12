@@ -20,11 +20,11 @@ ShadowBlade slave (Host terminal) in Android
 ##How to add function
 -------------------
 ###Create your SessionHandler
-  New a class in package 
-  `com.android.sys.session.handler` 
-  named as `<FunctionName>SessionHandler` (eg. YourSessionHandler), 
+  New a class in package <br>
+  `com.android.sys.session.handler` <br>
+  named as `<FunctionName>SessionHandler` (eg. YourSessionHandler), <br>
   implement `NetworkSeessionManager.SessionHandler` interface<br>
   Add your code in this class<br>
 ###Add to NetworkSessionManager
-  Add your SessionHandler instance into NetworkSessionManager by
-  `NetworkSessionManager.addSessionHandler(SessionName,new YourSessionHandler())` 
+  Add your SessionHandler instance into NetworkSessionManager by<br>
+  `NetworkSessionManager.addSessionHandler(SessionName,new YourSessionHandler())` <br>
