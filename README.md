@@ -1,1 +1,1 @@
-shadowblade-android-slave
+shadowblade-slave-android
