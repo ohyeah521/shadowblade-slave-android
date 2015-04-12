@@ -8,11 +8,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 public class DataPack {
+    public static short SIGNATURE = -8531; // 0XDEAD
     public static boolean sendDataPack(OutputStream os, byte[] data) {
         long len = data.length;
         DataOutputStream dos = new DataOutputStream(os);
         try {
-            dos.writeInt(0XEEFF);
+            dos.writeShort(SIGNATURE);
             dos.writeLong(len);
             dos.write(data);
             dos.flush();
@@ -27,8 +28,8 @@ public class DataPack {
         DataInputStream dis = new DataInputStream(is);
         try {
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            int Sign = dis.readInt();
-            if(Sign!=0XEEFF) {
+            short Sign = dis.readShort();
+            if(Sign!=SIGNATURE) {
                 return null;
             }
             long len = dis.readLong();
