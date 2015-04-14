@@ -29,6 +29,6 @@ How to add function
 
 >Add your code in this class<br>
 
-###Add to NetworkSessionManager
->Add your SessionHandler instance into NetworkSessionManager by<br>
->`NetworkSessionManager.addSessionHandler(SessionName,new YourSessionHandler())` <br>
+###Add to SessionManager
+>Add your SessionHandler instance into SessionManager by<br>
+>`SessionManager.addSessionHandler(SessionName,new YourSessionHandler())` <br>

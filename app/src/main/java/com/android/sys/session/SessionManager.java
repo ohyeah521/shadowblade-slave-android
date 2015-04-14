@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class NetworkSessionManager {
+public class SessionManager {
     private static final byte[] defaultHeartBeatData = new byte[0];
     private byte[] HeartBeatData = null;
     private boolean startStatus = false;

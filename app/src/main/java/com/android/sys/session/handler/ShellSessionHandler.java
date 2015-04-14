@@ -1,12 +1,12 @@
 package com.android.sys.session.handler;
 
-import com.android.sys.session.NetworkSessionManager;
+import com.android.sys.session.SessionManager;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class ShellSessionHandler implements NetworkSessionManager.SessionHandler {
+public class ShellSessionHandler implements SessionManager.SessionHandler {
     private final static String SHELL_NAME = "sh";
     private final static int BUFF_LEN = 0X1000;
     @Override

