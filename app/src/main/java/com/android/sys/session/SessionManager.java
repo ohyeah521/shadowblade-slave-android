@@ -2,6 +2,10 @@ package com.android.sys.session;
 
 import com.android.sys.utils.DataPack;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -9,33 +13,49 @@ import java.io.UnsupportedEncodingException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
 public class SessionManager {
     private static final byte[] defaultHeartBeatData = new byte[0];
+    private static int defaultPort = 8000;
+    private static short SIGNATURE = -8531; //0XDEAD
+    private static short OPERATION_HEARTBEAT = 0;
+    private static short OPERATION_CONNECT_HOST = 1;
+    private static short OPERATION_LISTEN_HOST = 2;
+    private static short OPERATION_ACCEPT_HOST = 3;
     private byte[] HeartBeatData = null;
     private boolean startStatus = false;
     private int HeartBeatDelay = 2000;
+    private int TimeoutValue = 10000;
     private int localPort = 0;
-    private int Port = 8000;
-    private String Host = "";
-    private DatagramSocket datagramSocket = null;
+    private List<String> mHostList = new ArrayList<>();
+    private DatagramSocket mDatagramSocket = null;
     private Map<String, SessionHandler> mSessionMap = new HashMap<>();
     Thread mThread = null;
+
     Runnable mSessionRunner = new Runnable() {
         @Override
         public void run() {
             try {
-                datagramSocket = new DatagramSocket(getLocalPort());
-                final DatagramSocket ds = datagramSocket;
+                mDatagramSocket = new DatagramSocket(getLocalPort());
+                final DatagramSocket ds = mDatagramSocket;
 
                 //send udp heart beat
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutputStream);
+                dataOutputStream.writeShort(SIGNATURE);
+                dataOutputStream.writeShort(OPERATION_HEARTBEAT);
+                dataOutputStream.write(getHeartBeatData());
+                final byte[] sendData = byteArrayOutputStream.toByteArray();
                 final Timer timer = new Timer();
                 timer.schedule(new TimerTask() {
 
@@ -45,9 +65,24 @@ public class SessionManager {
                             timer.cancel();
                             return;
                         }
-                        byte[] sendData = getHeartBeatData();
                         try {
-                            ds.send(new DatagramPacket(sendData, sendData.length, InetAddress.getByName(getHost()), getPort()));
+                            for(String addr: mHostList) {
+                                if(addr.indexOf("http://")==-1 || addr.indexOf("https://")==-1) {
+                                    String host = "";
+                                    int port = defaultPort;
+                                    String[] host_port = addr.split(":");
+                                    if (host_port.length >= 1) {
+                                        host = host_port[0];
+                                    }
+                                    if (host_port.length >= 2) {
+                                        try {
+                                            port = Integer.parseInt(host_port[1]);
+                                        } catch (Exception e) {
+                                        }
+                                    }
+                                    ds.send(new DatagramPacket(sendData, sendData.length, InetAddress.getByName(host), port));
+                                }
+                            }
                         } catch (UnknownHostException e) {
                         } catch (IOException e) {
                         } catch (Exception e) {
@@ -60,7 +95,7 @@ public class SessionManager {
                 }, 0, HeartBeatDelay);
 
                 //receive udp package
-                byte[] receiveData = new byte[1024];
+                byte[] receiveData = new byte[0X2000];
                 while(isStart()) {
                     DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
                     try {
@@ -74,6 +109,8 @@ public class SessionManager {
             }
         }
     };
+
+
 
     private void handleSession(InputStream inputStream, OutputStream outputStream) {
         byte[] receiveData = DataPack.receiveDataPack(inputStream);
@@ -135,20 +172,32 @@ public class SessionManager {
         this.localPort = localPort;
     }
 
-    public int getPort() {
-        return Port;
+    public void addHost(String host) {
+        mHostList.add(host);
     }
 
-    public void setPort(int port) {
-        Port = port;
+    public int getTimeoutValue() {
+        return TimeoutValue;
     }
 
-    public String getHost() {
-        return Host;
+    public void setTimeoutValue(int timeoutValue) {
+        TimeoutValue = timeoutValue;
     }
 
-    public void setHost(String host) {
-        Host = host;
+    public void removeHost(int index) {
+        mHostList.remove(index);
+    }
+
+    public void clearHost() {
+        mHostList.clear();
+    }
+
+    public int getHostCount() {
+        return mHostList.size();
+    }
+
+    public String getHost(int index) {
+        return mHostList.get(index);
     }
 
     public void start() {
@@ -161,9 +210,9 @@ public class SessionManager {
     }
 
     public void stop() {
-        if(datagramSocket!= null) {
-            datagramSocket.close();
-            datagramSocket = null;
+        if(mDatagramSocket != null) {
+            mDatagramSocket.close();
+            mDatagramSocket = null;
         }
         if(mThread != null) {
             try {
@@ -175,33 +224,47 @@ public class SessionManager {
         }
     }
 
-    private void receiveDatagramPackageHandler(DatagramPacket receivePacket) {
-        String host = receivePacket.getAddress().getHostAddress();
-        int port = receivePacket.getPort();
-        String uuid = "";
-        String msg = "";
-        try {
-            msg = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength(), "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            msg = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength() );
+    private void receiveDatagramPackageHandler(DatagramPacket receivePacket) throws IOException {
+        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(receivePacket.getData());
+        DataInputStream dataInputStream = new DataInputStream(byteArrayInputStream);
+        //read packet head
+        if ( dataInputStream.readShort() != SIGNATURE ) {
+            return;
         }
+        short operation = dataInputStream.readShort();
 
+        //read packet body
+        int headLength = 2 + 2;
+        String msg = new String(receivePacket.getData(), receivePacket.getOffset() + headLength, receivePacket.getLength()-headLength);
         String[] msgs = msg.split(" ");
-        uuid = msgs[0];
-        if(msgs.length > 1) {
-            String[] host_port = msgs[1].split(":");
-            host = host_port[0];
-            if(host_port.length>1) {
+        String uuid = msgs[0];
+        String packetAddress = receivePacket.getAddress().getHostAddress();
+        int packetPort = receivePacket.getPort();
+        if(operation == OPERATION_CONNECT_HOST) {
+            if (msgs.length > 1) {
+                String[] host_port = msgs[1].split(":");
+                packetAddress = host_port[0];
+                if (host_port.length > 1) {
+                    try {
+                        packetPort = Integer.parseInt(host_port[1]);
+                    } catch (Exception e) {
+                    }
+                }
+            }
+            createTcpInstance(packetAddress, packetPort, uuid);
+        } else if (operation == OPERATION_LISTEN_HOST) {
+            int localPort = getLocalPort();
+            if(msgs.length > 1) {
                 try {
-                    port = Integer.parseInt(host_port[1]);
+                    localPort = Integer.parseInt(msgs[1]);
                 } catch (Exception e) {
                 }
             }
+            listenTcpInstance(packetAddress, packetPort, localPort, uuid);
         }
-        createTcpInstance(host,port,uuid);
     }
 
-    private void createTcpInstance(final String host, final int port, final String uuid) {
+    private void createTcpInstance(final String address, final int port, final String uuid) {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -210,7 +273,7 @@ public class SessionManager {
                 OutputStream outputStream = null;
                 try {
                     //connect host
-                    connectSocket = new Socket(host,port);
+                    connectSocket = new Socket(address,port);
                     inputStream = connectSocket.getInputStream();
                     outputStream = connectSocket.getOutputStream();
 
@@ -221,7 +284,84 @@ public class SessionManager {
                     handleSession(inputStream,outputStream);
                 } catch (IOException e) {
                 } finally {
-                    //clean
+                    if(connectSocket != null) {
+                        try {
+                            connectSocket.close();
+                        } catch (IOException e) {
+                        }
+                    }
+                    if(inputStream != null) {
+                        try {
+                            inputStream.close();
+                        } catch (IOException e) {
+                        }
+                    }
+                    if(outputStream != null) {
+                        try {
+                            outputStream.close();
+                        } catch (IOException e) {
+                        }
+                    }
+                }
+            }
+        }).start();
+    }
+
+    private void listenTcpInstance(final String address,final int port, final int listenPort, final String uuid) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                ServerSocket serverSocket = null;
+                Socket connectSocket = null;
+                InputStream inputStream = null;
+                OutputStream outputStream = null;
+                boolean isListenSuccess = false;
+                try {
+                    serverSocket = new ServerSocket(listenPort);
+                    serverSocket.setSoTimeout(getTimeoutValue());
+                    connectSocket = serverSocket.accept();
+                    isListenSuccess = true;
+
+                    //send udp listen-complete pack
+                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                    DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutputStream);
+                    dataOutputStream.writeShort(SIGNATURE);
+                    dataOutputStream.writeShort(OPERATION_ACCEPT_HOST);
+                    dataOutputStream.writeShort(listenPort);
+                    dataOutputStream.writeBytes(uuid);
+                    byte[] sendData = byteArrayOutputStream.toByteArray();
+                    mDatagramSocket.send(new DatagramPacket(sendData, sendData.length, InetAddress.getByName(address), port));
+
+                    inputStream = connectSocket.getInputStream();
+                    outputStream = connectSocket.getOutputStream();
+
+                    //send uuid
+                    DataPack.sendDataPack(outputStream, uuid.getBytes("UTF-8"));
+
+                    //handle session
+                    handleSession(inputStream,outputStream);
+                } catch (IOException e) {
+                } finally {
+                    if(!isListenSuccess && mDatagramSocket != null) {
+                        //send udp listen-uncomplete pack
+                        try {
+                            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                            DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutputStream);
+                            dataOutputStream.writeShort(SIGNATURE);
+                            dataOutputStream.writeShort(OPERATION_ACCEPT_HOST);
+                            dataOutputStream.writeShort(0);
+                            dataOutputStream.writeBytes(uuid);
+                            byte[] sendData = byteArrayOutputStream.toByteArray();
+                            mDatagramSocket.send(new DatagramPacket(sendData, sendData.length, InetAddress.getByName(address), port));
+                        } catch(IOException e){
+                        }
+                    }
+                    if(serverSocket != null) {
+                        try {
+                            serverSocket.close();
+                        } catch (IOException e) {
+                        }
+                    }
                     if(connectSocket != null) {
                         try {
                             connectSocket.close();

