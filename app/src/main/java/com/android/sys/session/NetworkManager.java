@@ -28,6 +28,8 @@ public class NetworkManager {
     private static final byte[] defaultHeartBeatData = new byte[0];
     private static int defaultPort = 8000;
     private static short SIGNATURE = -8531; //0XDEAD
+    private static short OPERATION_SYN = -1;
+    private static short OPERATION_ACK = -2;
     private static short OPERATION_HEARTBEAT = 0;
     private static short OPERATION_CONNECT_HOST = 1;
     private static short OPERATION_LISTEN_HOST = 2;
@@ -205,7 +207,15 @@ public class NetworkManager {
         String uuid = msgs[0];
         String packetAddress = receivePacket.getAddress().getHostAddress();
         int packetPort = receivePacket.getPort();
-        if(operation == OPERATION_CONNECT_HOST) {
+        if(operation == OPERATION_SYN) {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutputStream);
+            dataOutputStream.writeShort(SIGNATURE);
+            dataOutputStream.writeShort(OPERATION_ACK);
+            dataOutputStream.writeBytes(uuid);
+            byte[] ackData = byteArrayOutputStream.toByteArray();
+            mDatagramSocket.send(new DatagramPacket(ackData, ackData.length, receivePacket.getAddress(), receivePacket.getPort()));
+        } else if(operation == OPERATION_CONNECT_HOST) {
             if (msgs.length > 1) {
                 String[] host_port = msgs[1].split(":");
                 packetAddress = host_port[0];
